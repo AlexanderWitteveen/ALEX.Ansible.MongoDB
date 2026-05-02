@@ -1,0 +1,157 @@
+---
+- name: Install MongoSH
+  apt:
+    deb: "{{ prop_source_mongosh }}"
+    state: present
+  vars:
+    ansible_connection: "{{ prop_ansible_connection }}"
+    ansible_host: "{{ prop_ipaddress }}"
+  become: true
+
+- name: Create PEM File
+  shell: |
+    cat /alex/certificates/host.cer /alex/certificates/host.key > /alex/certificates/host.pem
+  args:
+    executable: /bin/bash
+  vars:
+    ansible_connection: "{{ prop_ansible_connection }}"
+    ansible_host: "{{ prop_ipaddress }}"
+  become: true
+
+- name: Change file ownership, group and permissions
+  ansible.builtin.file:
+    path: /alex/certificates/host.pem
+    mode: '0644'
+  vars:
+    ansible_connection: "{{ prop_ansible_connection }}"
+    ansible_host: "{{ prop_ipaddress }}"
+  become: true
+
+- name: Ensure Data folder exists
+  file:
+    path: "/{{ prop_basename }}/mongodb/data/etc"
+    state: directory
+    owner: root
+    group: root
+    mode: 0777
+  vars:
+    ansible_connection: "{{ prop_ansible_connection }}"
+    ansible_host: "{{ prop_ipaddress }}"
+  become: true
+
+- name: Load docker image
+  shell: |
+    docker image load --input {{ prop_container_sources }}/mongodb/mongodb.8.0.20-ubuntu2204.base.tar
+  args:
+    executable: /bin/bash
+  vars:
+    ansible_connection: "{{ prop_ansible_connection }}"
+    ansible_host: "{{ prop_ipaddress }}"
+  become: true
+
+- name: create container
+  shell: |
+    docker container create \
+      --name mongodb \
+      --restart=always \
+      --pull=never \
+      -v /{{ prop_basename }}/mongodb/data/etc:/etc/mongo \
+      -v /{{ prop_basename }}:/{{ prop_basename }} \
+      -v /usr/share/ca-certificates:/usr/share/ca-certificates \
+      -p 27017:27017 \
+      alex/mongodb:base \
+      --config /etc/mongo/mongod.conf
+  args:
+    executable: /bin/bash
+  vars:
+    ansible_connection: "{{ prop_ansible_connection }}"
+    ansible_host: "{{ prop_ipaddress }}"
+  become: true
+
+- name: Add mongodb unlock config
+  ansible.builtin.template:
+    src: mongod.unlock.conf.j2
+    dest: "/{{ prop_basename }}/mongodb/data/etc/mongod.conf"
+    owner: "root"
+    group: "root"
+    mode: '0777'
+  vars:
+    ansible_connection: "{{ prop_ansible_connection }}"
+    ansible_host: "{{ prop_ipaddress }}"
+  become: true
+
+- name: run container
+  shell: |
+    docker container start mongodb
+  args:
+    executable: /bin/bash
+  vars:
+    ansible_connection: "{{ prop_ansible_connection }}"
+    ansible_host: "{{ prop_ipaddress }}"
+  become: true
+
+- name: Add admin user
+  shell: |
+    result=$(mongosh --eval "use admin" --eval "db.getUser('{{ prop_admin_username }}')")
+    if [ "$result" == "null" ]; then
+      mongosh --eval "use admin" --eval "db.createUser({user:'{{ prop_admin_username }}',pwd:'{{ prop_admin_password }}',roles:['root']})"
+    fi
+  args:
+    executable: /bin/bash
+  vars:
+    ansible_connection: "{{ prop_ansible_connection }}"
+    ansible_host: "{{ prop_ipaddress }}"
+  become: true
+
+- name: stop container
+  shell: |
+    docker container stop mongodb
+  args:
+    executable: /bin/bash
+  vars:
+    ansible_connection: "{{ prop_ansible_connection }}"
+    ansible_host: "{{ prop_ipaddress }}"
+  become: true
+
+- name: Replace mongodb config
+  ansible.builtin.template:
+    src: mongod.conf.j2
+    dest: "/{{ prop_basename }}/mongodb/data/etc/mongod.conf"
+    owner: "root"
+    group: "root"
+    mode: '0777'
+  vars:
+    ansible_connection: "{{ prop_ansible_connection }}"
+    ansible_host: "{{ prop_ipaddress }}"
+  become: true
+
+- name: run container
+  shell: |
+    docker container start mongodb
+  args:
+    executable: /bin/bash
+  vars:
+    ansible_connection: "{{ prop_ansible_connection }}"
+    ansible_host: "{{ prop_ipaddress }}"
+  become: true
+
+- name: Upload files
+  ansible.builtin.template:
+    src: "{{ item.source }}"
+    dest: "{{ item.target }}"
+    owner: "{{ prop_admin_username }}"
+    group: "{{ prop_admin_groupname }}"
+    mode: '0777'
+  loop:
+    - source: mongodb.yml.j2
+      target: "/{{ prop_basename }}/docker/mongodb.yml"
+    - source: mongodb.backup.sh.j2
+      target: "/{{ prop_basename }}/scripts/mongodb.backup.sh"
+    - source: mongodb.restore.sh.j2
+      target: "/{{ prop_basename }}/scripts/mongodb.restore.sh"
+    - source: mongodb.init.sh.j2
+      target: "/{{ prop_basename }}/scripts/mongodb.init.sh"
+  vars:
+    ansible_connection: ssh
+    ansible_host: "{{ prop_ipaddress }}"
+  become: true

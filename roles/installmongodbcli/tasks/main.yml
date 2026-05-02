@@ -1,0 +1,30 @@
+---
+
+- name: Download file from URL
+  ansible.builtin.get_url:
+    url: https://downloads.mongodb.com/compass/mongodb-mongosh_2.8.2_amd64.deb
+    dest: /tmp/mongocli.deb
+    mode: '0777'
+  vars:
+    ansible_connection: "{{ prop_ansible_connection }}"
+    ansible_host: "{{ prop_ipaddress }}"
+  become: true
+
+- name: Install a list of packages
+  apt:
+    deb: /tmp/mongocli.deb
+    state: present
+  vars:
+    ansible_connection: "{{ prop_ansible_connection }}"
+    ansible_host: "{{ prop_ipaddress }}"
+  become: true
+
+- name: Remove the downloaded file
+  ansible.builtin.file:
+    path: /tmp/mongocli.deb
+    state: absent
+  vars:
+    ansible_connection: "{{ prop_ansible_connection }}"
+    ansible_host: "{{ prop_ipaddress }}"
+  become: true
+

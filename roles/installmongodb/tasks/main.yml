@@ -1,0 +1,80 @@
+---
+
+- ansible.builtin.include_role: # knownoshost
+    name: alex.base.knownoshost
+
+- name: Install MongoSH
+  apt:
+    deb: "{{ prop_source_mongosh }}"
+    state: present
+  vars:
+    ansible_connection: "{{ prop_ansible_connection }}"
+    ansible_host: "{{ prop_ipaddress }}"
+  become: true
+
+- name: Create PEM File
+  shell: |
+    cat /alex/certificates/host.cer /alex/certificates/host.key > /alex/certificates/host.pem
+  args:
+    executable: /bin/bash
+  vars:
+    ansible_connection: "{{ prop_ansible_connection }}"
+    ansible_host: "{{ prop_ipaddress }}"
+  become: true
+
+- name: Change file ownership, group and permissions
+  ansible.builtin.file:
+    path: /alex/certificates/host.pem
+    mode: '0644'
+  vars:
+    ansible_connection: "{{ prop_ansible_connection }}"
+    ansible_host: "{{ prop_ipaddress }}"
+  become: true
+
+- ansible.builtin.include_role: # create datafolders
+    name: alex.debian13.datafolders
+  vars:
+    args_datafolder_local: 
+      - name: mongodb/data/backup
+      - name: mongodb/data/etc
+    args_datafolder_remote:
+      - name: backup
+        service: mongodb
+        mount: data-{{ prop_environment }}
+
+
+
+- name: Upload files
+  ansible.builtin.template:
+    src: "{{ item.source }}"
+    dest: "{{ item.target }}"
+    owner: "{{ prop_admin_username }}"
+    group: "{{ prop_admin_groupname }}"
+    mode: '0777'
+  loop:
+    - source: mongodb.yml.j2
+      target: "/{{ prop_basename }}/docker/mongodb.yml"
+    - source: mongodb.backup.sh.j2
+      target: "/{{ prop_basename }}/scripts/mongodb.backup.sh"
+    - source: mongodb.restore.sh.j2
+      target: "/{{ prop_basename }}/scripts/mongodb.restore.sh"
+    - source: mongodb.restoredb.sh.j2
+      target: "/{{ prop_basename }}/scripts/mongodb.restoredb.sh"
+    - source: mongodb.init.sh.j2
+      target: "/{{ prop_basename }}/scripts/mongodb.init.sh"
+    - source: mongod.conf.j2
+      target: "/{{ prop_basename }}/mongodb/data/etc/mongod.conf"
+  vars:
+    ansible_connection: ssh
+    ansible_host: "{{ prop_ipaddress }}"
+  become: true
+
+- ansible.builtin.include_role: # docker compose
+    name: alex.debian13.dockercompose
+  vars:
+    args_run_scripts:
+      - /{{ prop_basename }}/scripts/mongodb.restore.sh
+      - /{{ prop_basename }}/scripts/mongodb.init.sh
+    args_docker_images:
+      - file: mongodb/mongodb.8.0.20-ubuntu2204.base.tar
+    args_compose_file: "/{{ prop_basename }}/docker/mongodb.yml"

@@ -1,0 +1,22 @@
+#!/bin/bash
+
+# Create backup of MongoDB data directory
+if [ -n "$(ls -A /{{ prop_basename}}/mongodb/data)" ]; then
+    # docker container stop -s SIGTERM -t 60  mongodb-mongodb-1
+    #docker container stop mongodb-mongodb-1
+    #zip -r /mnt/data-{{ prop_environment }}/mongodb/{{ prop_hostname }}/backup/mongodb-backup-$(date +%Y%m%d%H%M%S).zip /{{ prop_basename}}/mongodb/data/*
+    #docker container start mongodb-mongodb-1
+    rm -r -f /{{ prop_basename}}/mongodb/backup/*
+    docker exec mongodb-mongodb-1 mongodump --username alex --password vinblanc --authenticationDatabase admin --ssl --tlsInsecure --out /data/backup
+    zip -r /mnt/data-{{ prop_environment }}/mongodb/{{ prop_hostname }}/backup/mongodb-backup-$(date +%Y%m%d%H%M%S).zip /{{ prop_basename}}/mongodb/data/backup/*
+fi
+
+# Keep only last 5 backups
+max=5
+count=$( ls -t /mnt/data-{{ prop_environment }}/mongodb/{{ prop_hostname }}/backup | wc -l )
+remove=$(( count - max ))
+if [ $count -gt $max ]; then
+    for file in $( ls -t /mnt/data-{{ prop_environment }}/mongodb/{{ prop_hostname }}/backup | tail -n $remove ); do
+        rm -f /mnt/data-{{ prop_environment }}/mongodb/{{ prop_hostname }}/backup/$file
+    done
+fi

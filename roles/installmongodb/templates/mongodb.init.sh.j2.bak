@@ -1,0 +1,12 @@
+#!/bin/bash
+
+if [ -z "$(ls -A /{{ prop_basename}}/mongodb/data)" ]; then
+    mkdir -p /{{ prop_basename }}/mongodb/data/etc
+    mkdir -p /{{ prop_basename }}/mongodb/data/db
+    mkdir -p /{{ prop_basename }}/mongodb/data/backup
+    mkdir -p /{{ prop_basename }}/mongodb/data/configdb
+    cp /{{ prop_basename }}/mongodb/defaults/etc/mongod.conf /{{ prop_basename }}/mongodb/data/etc
+fi
+
+chmod -R 777 /{{ prop_basename }}/mongodb/data
+

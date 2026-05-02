@@ -1,0 +1,16 @@
+# http://docs.mongodb.org/manual/reference/configuration-options/
+
+net:
+  port: 27017
+  bindIp: '*'
+  tls:
+    mode: requireTLS
+    certificateKeyFile: /alex/certificates/host.pem
+    CAFile: /usr/share/ca-certificates/{{ prop_basename }}/{{ prop_certificates_ca }}.cer
+    allowConnectionsWithoutCertificates: true
+
+processManagement:
+  timeZoneInfo: /usr/share/zoneinfo
+
+security:
+  authorization: enabled

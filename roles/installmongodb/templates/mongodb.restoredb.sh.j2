@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# Remove current MongoDB backup directory contents
+#if [ -n "$(ls -A /{{ prop_basename}}/mongodb/backup)" ]; then
+#    rm -r -f /{{ prop_basename}}/mongodb/data/backup/*
+#fi
+
+# Restore latest backup of MongoDB backup directory
+#if [ -n "$(ls -A /mnt/data-{{ prop_environment }}/mongodb/{{ prop_hostname }}/backup)" ]; then
+#    docker exec -it mongodb-mongodb-1 mongorestore --username alex --password vinblanc --authenticationDatabase admin --ssl --tlsInsecure --drop /data/backup
+#fi
+
+
+docker exec mongodb-mongodb-1 mongorestore --username alex --password vinblanc --authenticationDatabase admin --ssl --tlsInsecure --drop /data/backup

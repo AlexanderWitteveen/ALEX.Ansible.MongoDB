@@ -1,0 +1,11 @@
+---
+
+- ansible.builtin.pip:
+    name:
+        - psycopg2
+    state: present
+    venv: "{{ prop_venv_path }}"
+  vars:
+    ansible_connection: "{{ prop_connection }}"
+    ansible_host: "{{ prop_ipaddress }}"
+  become: true

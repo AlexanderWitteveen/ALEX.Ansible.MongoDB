@@ -1,0 +1,28 @@
+name: mongodb
+
+services:
+  mongodb:
+    image: alex/mongodb:base
+    pull_policy: never
+    environment:
+      - TZ=Europe/Amsterdam
+      - MONGODB_INITDB_ROOT_USERNAME={{ prop_admin_username }}
+      - MONGODB_INITDB_ROOT_PASSWORD={{ prop_admin_password }}
+    ports:
+      - "27017:27017"
+    volumes:
+      - type: bind
+        source: /{{ prop_basename }}/mongodb/data/backup
+        target: /data/backup
+      - type: bind
+        source: /{{ prop_basename }}/mongodb/data/etc
+        target: /etc/mongo
+      - type: bind
+        source: /{{ prop_basename }}
+        target: /{{ prop_basename }}
+      - type: bind
+        source: /usr/share/ca-certificates
+        target: /usr/share/ca-certificates
+    command: mongod --config /etc/mongo/mongod.conf
+    restart: unless-stopped
+
