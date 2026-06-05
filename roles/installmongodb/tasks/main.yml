@@ -9,7 +9,7 @@
     state: present
   vars:
     ansible_connection: "{{ prop_ansible_connection }}"
-    ansible_host: "{{ prop_ipaddress }}"
+    ansible_host: "{{ prop_host.ipaddress }}"
   become: true
 
 - name: Create PEM File
@@ -19,7 +19,7 @@
     executable: /bin/bash
   vars:
     ansible_connection: "{{ prop_ansible_connection }}"
-    ansible_host: "{{ prop_ipaddress }}"
+    ansible_host: "{{ prop_host.ipaddress }}"
   become: true
 
 - name: Change file ownership, group and permissions
@@ -28,7 +28,7 @@
     mode: '0644'
   vars:
     ansible_connection: "{{ prop_ansible_connection }}"
-    ansible_host: "{{ prop_ipaddress }}"
+    ansible_host: "{{ prop_host.ipaddress }}"
   become: true
 
 - ansible.builtin.include_role: # create datafolders
@@ -40,7 +40,7 @@
     args_datafolder_remote:
       - name: backup
         service: mongodb
-        mount: data-{{ prop_environment }}
+        mount: data-{{ prop_cmdb.environment }}
 
 
 
@@ -65,8 +65,8 @@
     - source: mongod.conf.j2
       target: "/{{ prop_basename }}/mongodb/data/etc/mongod.conf"
   vars:
-    ansible_connection: ssh
-    ansible_host: "{{ prop_ipaddress }}"
+    ansible_connection: "{{ prop_ansible_connection }}"
+    ansible_host: "{{ prop_host.ipaddress }}"
   become: true
 
 - ansible.builtin.include_role: # docker compose

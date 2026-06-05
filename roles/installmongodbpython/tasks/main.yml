@@ -7,5 +7,5 @@
     venv: "{{ prop_venv_path }}"
   vars:
     ansible_connection: "{{ prop_connection }}"
-    ansible_host: "{{ prop_ipaddress }}"
+    ansible_host: "{{ prop_host.ipaddress }}"
   become: true

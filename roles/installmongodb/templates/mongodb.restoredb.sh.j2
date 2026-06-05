@@ -6,7 +6,7 @@
 #fi
 
 # Restore latest backup of MongoDB backup directory
-#if [ -n "$(ls -A /mnt/data-{{ prop_environment }}/mongodb/{{ prop_hostname }}/backup)" ]; then
+#if [ -n "$(ls -A /mnt/data-{{ prop_cmdb.environment }}/mongodb/{{ prop_host.hostname }}/backup)" ]; then
 #    docker exec -it mongodb-mongodb-1 mongorestore --username alex --password vinblanc --authenticationDatabase admin --ssl --tlsInsecure --drop /data/backup
 #fi
 
